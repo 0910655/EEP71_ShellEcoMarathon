@@ -56,5 +56,20 @@ Cn = [1 0];
 sys_ss = ss(A,B,Cn,0);
 Nbar = rscale(sys_ss,Kc);
 
-sys_cl = ss((A-B*Kc),B*Nbar,C,D);
-step(sys_cl)
+sys_cl_d = ss((Ad-Bd*Kc),Bd*Nbar,Cd,Dd,Tsc);
+step(sys_cl_d)
+
+
+%% Observer constante L
+sys_cl_c = ss((A-B*Kc),B*Nbar,Cn,0);
+eig(c2d(sys_cl_c,Tsc))
+
+eigenVal = eig(sys_cl_c);
+eigenVal = eigenVal*5;
+Kp = place(A,B,eigenVal);
+eig(sys_cl_c);
+sys_cl_c = ss((A-B*Kp),B*Nbar,Cn,0);
+
+sys_cl_dL = c2d(sys_cl_c,Tsc);
+eigenValD = eig(sys_cl_dL)
+L = place(Ad',(Cn)',eigenValD)';
