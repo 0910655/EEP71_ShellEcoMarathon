@@ -13,6 +13,7 @@ Ra = 2.1262; %Motor Resistance (Ra) ohms
 Ke = 0.069585; %Back EMF Constant (Ke)  V/rpm
 n = 16.5; % Tandwielverhouding 
 
+load('C:\Users\Roberto\OneDrive - Hogeschool Rotterdam\SEM EEP71\Code\Systeem identificatie\parameters_sys_id_v4_impulse_50V_20-01-19.mat');
 %% State Space model
 
 A = [-(bm*(n^2) + bg)/(Jm*(n^2) + Jg) Kt*n/(Jm*(n^2) + Jg); 
@@ -74,6 +75,11 @@ Ka = place(Aa,Ba,[eigVal' integralPole])
 sys_cl = ss(Aa-Ba*Ka,Br,Ca,Da);
 step(sys_cl)
 
+Qi = [1 0 0;
+      0 1 0;
+      0 0 1];
+Kci = lqr(Aa,Ba,Qi,R);
+
 %% C2D
 
 sysd = c2d(sys_cl, Tsc);
@@ -87,7 +93,7 @@ Bdi = sysd.B;
 Cdi = sysd.C;
 Ddi = sysd.D;
 
-Kd = place(Adi,Bdi,eigD)
+Kd = acker(Adi,Bdi,eigD)
 Kd2 = place(Adi,Bdi,eigDD)
 
 sys_cld = ss(Adi-Bdi*Kd2,Br,Cdi,Ddi,Tsc);
