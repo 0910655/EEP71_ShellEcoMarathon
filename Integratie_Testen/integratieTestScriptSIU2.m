@@ -1,4 +1,5 @@
 %% Parameters
+n = 16.5; % Tandwielverhouding
 load('parameters_sys_id_2param_50V_20-01-19.mat');
 
 %% State Space model
