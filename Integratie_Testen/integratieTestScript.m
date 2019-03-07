@@ -44,10 +44,10 @@ co = ctrb(sysci);
 controllability = rank(co)
 
 Q = Ca'*Ca;
-Q(1,1) = 10000;
-Q(2,2) = 1;
-Q(3,3) = 10000;%2.32;
-R = 1;
+Q(1,1) = 100;
+Q(2,2) = 140;
+Q(3,3) = 25000;
+R = 80;
 Kci = lqr(Aa,Ba,Q,R);
 Kdi = dlqr(Ad,Bd,Q,R);
 
@@ -68,4 +68,4 @@ eig(sys_cld)
 %% Observer constante L
 sys_clL = ss(A-B*Kci(1:2),B,C,D);
 eigenVal = eig(sys_clL);
-eigenVal = eigenVal*0.52;
+eigenVal = eigenVal*72.7;
