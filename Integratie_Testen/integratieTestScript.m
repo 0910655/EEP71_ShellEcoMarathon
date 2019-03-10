@@ -29,7 +29,7 @@ sysci = ss(Aa,Ba,Ca,Da);
 
 %% C2D
 
-Tsc = 1/20000;
+Tsc = 1/2000;
 
 sysdi = c2d(sysci, Tsc);
 
