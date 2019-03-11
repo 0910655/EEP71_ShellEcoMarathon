@@ -1,7 +1,5 @@
 %% Parameters
 
-n = 17 % Tandwielverhouding 
-
 Jm = 0.00013932; %Rotor Inertia (J) kg.m^2
 Jg = 0.002098; %Rotor Inertia (J) kg.m^2
 
@@ -13,22 +11,18 @@ La = 0.00017073; %Motor Inductance (La) H
 Ra = 2.1262; %Motor Resistance (Ra) ohms 
 
 Ke = 0.069585; %Back EMF Constant (Ke)  V/rpm
-n = 16.5
+n = 16.5; % Tandwielverhouding 
 
 %% State Space model
 
 A = [-(bm*(n^2) + bg)/(Jm*(n^2) + Jg) Kt*n/(Jm*(n^2) + Jg); 
     -(n*Ke)/La -Ra/La];
-
 B = [0; 
     1/La];
 C = eye(2);
 D = [0;0];
 
 sysc = ss(A,B,C,D);
-
-step(sysc);
-
 %% C2D
 
 Tsc = 1/100000;
@@ -43,7 +37,7 @@ Dd = sysd.D;
 %% Feedback constante berekenen met LQR
 
 co = ctrb(sysd);
-controllability = rank(co)
+controllability = rank(co);
 
 Q = C'*C;
 Q(1,1) = 10;
@@ -55,21 +49,29 @@ Kc = lqr(sysd,Q,R)
 Cn = [1 0];
 sys_ss = ss(A,B,Cn,0);
 Nbar = rscale(sys_ss,Kc);
-
 sys_cl_d = ss((Ad-Bd*Kc),Bd*Nbar,Cd,Dd,Tsc);
-step(sys_cl_d)
 
+%% Plot Open en Closed-loop stap responsie
+
+step(sysc);
+hold on
+step(sys_cl_d)
+legend('Open-loop','Closed-loop');
+hold off
 
 %% Observer constante L
 sys_cl_c = ss((A-B*Kc),B*Nbar,Cn,0);
-eig(c2d(sys_cl_c,Tsc))
 
 eigenVal = eig(sys_cl_c);
 eigenVal = eigenVal*5;
 Kp = place(A,B,eigenVal);
-eig(sys_cl_c);
 sys_cl_c = ss((A-B*Kp),B*Nbar,Cn,0);
 
 sys_cl_dL = c2d(sys_cl_c,Tsc);
-eigenValD = eig(sys_cl_dL)
-L = place(Ad',(Cn)',eigenValD)';
+
+st1 = stepinfo(ss((Ad-Bd*Kc),Bd*Nbar,Cn,0,Tsc));
+st2 = stepinfo(sys_cl_dL);
+diff = (st1.SettlingTime)/(st2.SettlingTime)
+
+eigenValD = eig(sys_cl_dL);
+L = place(Ad',(Cn)',eigenValD)'

@@ -13,7 +13,10 @@ Ra = 2.1262; %Motor Resistance (Ra) ohms
 Ke = 0.069585; %Back EMF Constant (Ke)  V/rpm
 n = 16.5; % Tandwielverhouding 
 
-load('C:\Users\Roberto\OneDrive - Hogeschool Rotterdam\SEM EEP71\Code\Systeem identificatie\parameters_sys_id_v4_impulse_50V_20-01-19.mat');
+
+
+load('C:\Users\Roberto\OneDrive - Hogeschool Rotterdam\SEM EEP71\Code\Systeem identificatie\parameters_sys_id_2param_50V_20-01-19.mat');
+
 %% State Space model
 
 A = [-(bm*(n^2) + bg)/(Jm*(n^2) + Jg) Kt*n/(Jm*(n^2) + Jg); 
@@ -25,41 +28,7 @@ D = [0];
 
 sysc = ss(A,B,C,D);
 
-%% C2D
-
-Tsc = 1/20000;
-
-sysd = c2d(sysc, Tsc);
-
-Ad = sysd.A;
-Bd = sysd.B;
-Cd = sysd.C;
-Dd = sysd.D;
-
-%% Feedback constante berekenen met LQR
-
-co = ctrb(sysd);
-controllability = rank(co);
-
-Q = C'*C;
-Q(1,1) = 1;
-Q(2,2) = 3900;
-R = 1;
-Kc = lqr(sysc,Q,R);
-Kc2 = dlqr(Ad,Bd,Q,R);
-Kc3 = lqrd(A,B,Q,R,Tsc);
-
-%% Integral
-
-sys_cl_1 = ss((A-B*Kc),B,C,D);
-eigVal = eig(sys_cl_1);
-integralPole = min(eigVal)*27
-
-sys_cl_d1 = ss((Ad-Bd*Kc2),Bd,Cd,Dd,Tsc);
-eigValD = eig(sys_cl_d1);
-integralPoleD = max(abs(eigValD)) + ((max(abs(eigValD)))*0.60 - 1) %0.891
-eigDD = [eigValD' integralPoleD];
-
+%% State space model met integrator
 
 Aa = [-(bm*(n^2) + bg)/(Jm*(n^2) + Jg) Kt*n/(Jm*(n^2) + Jg) 0; 
     -(n*Ke)/La -Ra/La 0;
@@ -67,51 +36,69 @@ Aa = [-(bm*(n^2) + bg)/(Jm*(n^2) + Jg) Kt*n/(Jm*(n^2) + Jg) 0;
 Ba = [0; 
     1/La;
     0];
-Br = [0 ; 0; -1];
+Br = [0; 0; -1];
 Ca = [1 0 0];
 Da = [0];
-Ka = place(Aa,Ba,[eigVal' integralPole])
 
-sys_cl = ss(Aa-Ba*Ka,Br,Ca,Da);
-step(sys_cl)
-
-Qi = [1 0 0;
-      0 1 0;
-      0 0 1];
-Kci = lqr(Aa,Ba,Qi,R);
+sysci = ss(Aa,Ba,Ca,Da);
 
 %% C2D
 
-sysd = c2d(sys_cl, Tsc);
-eigD = eig(sysd)
+Tsc = 1/20000; %1khz werkt het beste
 
-sys_c2 = ss(Aa, Ba, Ca, Da);
-sysd = c2d(sys_c2, Tsc);
+sysdi = c2d(sysci, Tsc);
 
-Adi = sysd.A;
-Bdi = sysd.B;
-Cdi = sysd.C;
-Ddi = sysd.D;
+Ad = sysdi.A;
+Bd = sysdi.B;
+Cd = sysdi.C;
+Dd = sysdi.D;
 
-Kd = acker(Adi,Bdi,eigD)
-Kd2 = place(Adi,Bdi,eigDD)
+%% Feedback constante berekenen met LQR
 
-sys_cld = ss(Adi-Bdi*Kd2,Br,Cdi,Ddi,Tsc);
+co = ctrb(sysci);
+controllability = rank(co)
+
+Q = Ca'*Ca;
+Q(1,1) = 100;
+Q(2,2) = 140;
+Q(3,3) = 25000;
+R = 80;
+Kdi = dlqr(Ad,Bd,Q,R);
+Kci = lqr(Aa,Ba,Q,R);
+
+%% Integral
+close all
+sys_cl = ss(Aa-Ba*Kci,Br,Ca,Da);
+step(sys_cl)
+
+sys_cldd = c2d(sys_cl,Tsc);
+eigD = eig(sys_cldd)
+
 figure
+
+sys_cld = ss(Ad-Bd*Kdi,Br,Cd,Dd,Tsc);
 step(sys_cld)
+eig(sys_cld)
 
 %% Observer constante L
-
-eigenVal = eig(sys_cl_1);
-eigenVal = eigenVal*100;
-Kp = place(A,B,eigenVal);
-sys_cl_c = ss((A-B*Kp),B,C,D);
-
-sys_cl_dL = c2d(sys_cl_c,Tsc);
-
-st1 = stepinfo(c2d(sys_cl_1,Tsc));
-st2 = stepinfo(sys_cl_dL);
-diff = (st1.SettlingTime)/(st2.SettlingTime);
-
-eigenValD = eig(sys_cl_dL);
-L = place(Ad',(C)',eigenValD)';
+Kci = lqr(Aa,Ba,Q,R);
+sys_clL = ss(A-B*Kci(1:2),B,C,D);
+eigenVal = eig(sys_clL);
+eigenVal = eigenVal*72.7;
+% Kp = place(A,B,eigenVal);
+% sys_cl_c = ss((A-B*Kp),B,C,D);
+% 
+% sys_cl_dL = c2d(sys_cl_c,Tsc);
+% 
+% st1 = stepinfo(c2d(sys_clL,Tsc));
+% st2 = stepinfo(sys_cl_dL);
+% diff = (st1.SettlingTime)/(st2.SettlingTime);
+% 
+% sysd = c2d(sysc, Tsc);
+% Add = sysd.A;
+% Bdd = sysd.B;
+% sysdh = c2d(sysc, 1e-6);
+% Adh = sysdh.A;
+% Bdh = sysdh.B;
+% eigenValD = eig(sys_cl_dL);
+% L = place(Adh',(C)',eigenValD)';
