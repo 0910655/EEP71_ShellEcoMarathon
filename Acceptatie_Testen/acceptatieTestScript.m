@@ -1,20 +1,6 @@
 %% Parameters
 
-Jm = 0.00013932; %Rotor Inertia (J) kg.m^2
-Jg = 0.002098; %Rotor Inertia (J) kg.m^2
-
-bm = 0.00077676;  %Viscous Friction Coefficient (b) 
-bg = 0.053853;  %Viscous Friction Coefficient (b)
-
-Kt = 0.083796; %Torque Constant (Kt) N.m/A
-La = 0.00017073; %Motor Inductance (La) H
-Ra = 2.1262; %Motor Resistance (Ra) ohms 
-
-Ke = 0.069585; %Back EMF Constant (Ke)  V/rpm
 n = 16.5; % Tandwielverhouding 
-
-
-
 load('parameters_sys_id_2param_50V_20-01-19.mat');
 
 %% State Space model
